@@ -63,15 +63,56 @@ your_project/
 
 ## Environment Setup
 
-### 1. Google Cloud Authentication
+### 0. Rename the variable
+
+In this project, I will use the following naming, please change it or just name it same as it:
+
+```
+project_name = zeals-interview
+dataset_name = zeals_biglake_dataset
+table_name = bikeshare_trips_biglake
+bucket_path = zeals_dataset/bikeshare
+```
+
+### 1. Create Cloud Storage bucket with the following structure
+
+```
+zeals_dataset/
+├── bikeshare/
+```
+![image](https://github.com/user-attachments/assets/6c59589f-9444-4339-9b1c-9d8065ce6748)
+
+### 2. Create Biglake table using the command in scripts/create_biglake_table.sh
+
+Run the gcloud bq command in Google console
+```
+# Create biglake table def
+bq mkdef \
+--source_format=PARQUET \
+--connection_id=us.zeals_connection \
+--hive_partitioning_mode=CUSTOM \
+--hive_partitioning_source_uri_prefix=gs://zeals_dataset/bikeshare/{trip_date:DATE}/{trip_hour:STRING} \
+--require_hive_partition_filter=false \
+--metadata_cache_mode=MANUAL \
+gs://zeals_dataset/bikeshare/* > mytable_def
+
+# Create biglake table
+bq mk --external_table_definition=mytable_def \
+zeals_biglake_dataset.bikeshare_trips_biglake \
+trip_id:INTEGER,start_time:TIMESTAMP,start_station_id:INTEGER,start_station_name:STRING,end_station_id:INTEGER,end_station_name:STRING,duration_minutes:INTEGER
+```
+You will see `Table 'zeals-interview:zeals_biglake_dataset.bikeshare_trips_biglake' successfully created.` 
+
+
+### 3. Google Cloud Authentication
 
 Place the `service_account.json` file in the `scripts/` directory. This file will be used by the Airflow DAG to authenticate with Google Cloud services.
 
-### 2. Docker Setup
+### 4. Docker Setup
 
 Ensure Docker and Docker Compose are installed and running on your local machine.
 
-### 3. Build the Docker Image
+### 5. Build the Docker Image
 
 Follow and construct the project folder structure(please add logs folder) and build the Docker image for the Airflow environment:
 
@@ -79,7 +120,7 @@ Follow and construct the project folder structure(please add logs folder) and bu
 docker compose -p zeal-airflow build 
 ```
 
-### 4. Start Airflow Services
+### 6. Start Airflow Services
 
 Start the Airflow services using Docker Compose:
 
@@ -104,16 +145,12 @@ Login using the default credentials (if configured in the `docker-compose.yml`):
 - Username: `airflow`
 - Password: `airflow`
 
-### 2. Set Up Airflow Connections
+### 2. Check if the Dag exist
 
-Make sure to set up the necessary Airflow connections for Google Cloud. In the Airflow UI:
+If you setup correctly, you can see the dag:
 
-- Navigate to **Admin > Connections**.
-- Add a new connection with the following details:
-  - **Conn Id**: `google_cloud_default`
-  - **Conn Type**: `Google Cloud`
-  - **Keyfile Path**: `/opt/airflow/scripts/service_account.json`
-  - **Project Id**: Your Google Cloud Project ID
+![image](https://github.com/user-attachments/assets/86b935c3-fa14-45b9-a4ca-52b8e0788832)
+
 
 ## Triggering the Airflow DAG
 
