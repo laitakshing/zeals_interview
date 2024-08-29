@@ -19,8 +19,8 @@ ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
 ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 # gcloud auth login
-COPY ./scripts/zeals-interview-90dbff100307.json /opt/airflow/key.json
-ENV GOOGLE_APPLICATION_CREDENTIALS="/opt/airflow/key.json"
+COPY ./scripts/service_account.json /opt/airflow/service_account.json
+ENV GOOGLE_APPLICATION_CREDENTIALS="/opt/airflow/service_account.json"
 RUN /usr/local/gcloud/google-cloud-sdk/bin/gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
 
 # Install Python dependencies
