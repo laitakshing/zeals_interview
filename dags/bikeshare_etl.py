@@ -13,6 +13,7 @@ default_args = {
     "depends_on_past": False,
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
+    "schedule_interval": "@daily",
 }
 
 # Define the DAG
