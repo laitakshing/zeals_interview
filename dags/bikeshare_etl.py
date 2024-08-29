@@ -13,7 +13,6 @@ default_args = {
     "depends_on_past": False,
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
-    "schedule_interval": "@daily",
 }
 
 # Define the DAG
@@ -21,7 +20,7 @@ with DAG(
     "bikeshare_etl",
     default_args=default_args,
     description="Extract data from BigQuery, save as Parquet, and upload to GCS",
-    schedule_interval=None,  # Manual trigger
+    schedule_interval="0 12 * * *",  # Daily trigger
     start_date=days_ago(1),  # Default start date
     catchup=False,
 ) as dag:
