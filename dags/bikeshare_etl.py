@@ -6,6 +6,11 @@ from datetime import datetime, timedelta
 import gcsfs
 from concurrent.futures import ThreadPoolExecutor
 from airflow.utils.dates import days_ago
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Default arguments for the DAG
 default_args = {
@@ -13,6 +18,8 @@ default_args = {
     "depends_on_past": False,
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
+    "email_on_failure": True,
+    "email": ["your_email@example.com"],
 }
 
 # Define the DAG
@@ -26,82 +33,105 @@ with DAG(
 ) as dag:
 
     def extract_data_from_bigquery(**kwargs):
-        # Retrieve parameters passed during DAG trigger
-        start_date = kwargs["dag_run"].conf.get("start_date")
-        end_date = kwargs["dag_run"].conf.get("end_date")
+        try:
+            logger.info("Starting data extraction from BigQuery")
+            # Retrieve parameters passed during DAG trigger
+            start_date = kwargs["dag_run"].conf.get("start_date")
+            end_date = kwargs["dag_run"].conf.get("end_date")
 
-        # Fallback to yesterday's date if parameters are not provided
-        if not start_date:
-            start_date = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
-        if not end_date:
-            end_date = start_date
+            # Fallback to yesterday's date if parameters are not provided
+            if not start_date:
+                start_date = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+            if not end_date:
+                end_date = start_date
 
-        # Log the dates being used
-        print(f"Running DAG with start_date={start_date} and end_date={end_date}")
+            # Log the dates being used
+            print(f"Running DAG with start_date={start_date} and end_date={end_date}")
 
-        # Initialize BigQuery client
-        client = bigquery.Client(project="zeals-interview")
+            # Initialize BigQuery client
+            client = bigquery.Client(project="zeals-interview")
 
-        # SQL query to extract data for the specified date range
-        query = f"""
-        SELECT 
-            trip_id,
-            start_time,
-            start_station_id,
-            start_station_name,
-            end_station_id,
-            end_station_name,
-            duration_minutes,
-            FORMAT_TIMESTAMP('%Y-%m-%d', start_time) as trip_date,
-            FORMAT_TIMESTAMP('%H', start_time) as trip_hour
-        FROM 
-            `bigquery-public-data.austin_bikeshare.bikeshare_trips`
-        WHERE 
-            FORMAT_TIMESTAMP('%Y-%m-%d', start_time) BETWEEN '{start_date}' AND '{end_date}'
-        """
+            # SQL query to extract data for the specified date range
+            query = f"""
+            SELECT 
+                trip_id,
+                start_time,
+                start_station_id,
+                start_station_name,
+                end_station_id,
+                end_station_name,
+                duration_minutes,
+                FORMAT_TIMESTAMP('%Y-%m-%d', start_time) as trip_date,
+                FORMAT_TIMESTAMP('%H', start_time) as trip_hour
+            FROM 
+                `bigquery-public-data.austin_bikeshare.bikeshare_trips`
+            WHERE 
+                FORMAT_TIMESTAMP('%Y-%m-%d', start_time) BETWEEN '{start_date}' AND '{end_date}'
+            """
 
-        # Run the query and load the data into a DataFrame
-        df = client.query(query).to_dataframe()
+            # Run the query and load the data into a DataFrame
+            df = client.query(query).to_dataframe()
 
-        # Cast integer columns
-        int_cols = ["trip_id", "start_station_id", "end_station_id", "duration_minutes"]
-        df[int_cols] = df[int_cols].astype("int64")
+            # Cast integer columns
+            int_cols = [
+                "trip_id",
+                "start_station_id",
+                "end_station_id",
+                "duration_minutes",
+            ]
+            df[int_cols] = df[int_cols].astype("int64")
 
-        # Push the DataFrame to XCom
-        kwargs["ti"].xcom_push(key="dataframe", value=df)
+            # Push the DataFrame to XCom
+            kwargs["ti"].xcom_push(key="dataframe", value=df)
+            logger.info("Data extraction completed successfully")
+
+        except Exception as e:
+            logger.error(f"Error during data extraction: {e}", exc_info=True)
+            raise
 
     def upload_data_to_gcs(**kwargs):
-        # Pull the DataFrame from XCom
-        df = kwargs["ti"].xcom_pull(key="dataframe", task_ids="extract_data")
+        try:
+            logger.info("Starting data upload to GCS")
+            # Pull the DataFrame from XCom
+            df = kwargs["ti"].xcom_pull(key="dataframe", task_ids="extract_data")
 
-        # Initialize the GCS filesystem
-        fs = gcsfs.GCSFileSystem()
+            if df is None:
+                raise ValueError("No data found in XCom for task 'extract_data'")
 
-        included_columns = [
-            "trip_id",
-            "start_time",
-            "start_station_id",
-            "start_station_name",
-            "end_station_id",
-            "end_station_name",
-            "duration_minutes",
-        ]
+            # Initialize the GCS filesystem
+            fs = gcsfs.GCSFileSystem()
 
-        def upload_file(day_df, date_str, hour):
-            bucket_name = "zeals_dataset"
-            base_path = f"gs://{bucket_name}/bikeshare/trip_date={date_str}/"
-            file_path = f"{base_path}trip_hour={hour}/data.parquet"
-            with fs.open(file_path, "wb") as f:
-                day_df.to_parquet(f, index=False)
-            print(f"Uploaded {file_path}")
+            included_columns = [
+                "trip_id",
+                "start_time",
+                "start_station_id",
+                "start_station_name",
+                "end_station_id",
+                "end_station_name",
+                "duration_minutes",
+            ]
 
-        # Use ThreadPoolExecutor to parallelize uploads
-        with ThreadPoolExecutor(max_workers=24) as executor:
-            for (trip_date, trip_hour), group in df.groupby(["trip_date", "trip_hour"]):
-                hour_df = group[included_columns]
-                executor.submit(upload_file, hour_df, trip_date, trip_hour)
+            def upload_file(day_df, date_str, hour):
+                bucket_name = "zeals_dataset"
+                base_path = f"gs://{bucket_name}/bikeshare/trip_date={date_str}/"
+                file_path = f"{base_path}trip_hour={hour}/data.parquet"
+                with fs.open(file_path, "wb") as f:
+                    day_df.to_parquet(f, index=False)
+                print(f"Uploaded {file_path}")
 
-        print("Data uploaded to GCS successfully.")
+            # Use ThreadPoolExecutor to parallelize uploads
+            with ThreadPoolExecutor(max_workers=24) as executor:
+                for (trip_date, trip_hour), group in df.groupby(
+                    ["trip_date", "trip_hour"]
+                ):
+                    hour_df = group[included_columns]
+                    executor.submit(upload_file, hour_df, trip_date, trip_hour)
+
+            logger.info("Data uploaded to GCS successfully")
+
+        except Exception as e:
+            logger.error(f"Error during data upload: {e}", exc_info=True)
+            raise
 
     # Define the PythonOperators
     extract_task = PythonOperator(
