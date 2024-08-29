@@ -204,10 +204,14 @@ docker-compose logs airflow-scheduler
 
 ### 3. Remarks
 
-1. We are using ‘wb’ mode so it will truncates and recreate file if it already exists and creates a new file if it does not exist. Thus, It is safe to re-run the dag
-2. For creating a biglake table programmatically, it only work when using gcloud bq command, escpecially on Hive partition data. I need more time for other method like SQL
-3. For Airflow Docker compose, I just adopt the basic setup(i.e. no additional workers) since no special requirement.
-4. I did not upload my service-account key for security issue
+1.	Safe Re-Execution of the DAG:
+The DAG is designed to be idempotent. By using the 'wb' mode when writing files, the existing file is truncated and recreated if it exists, and a new file is created if it does not. This ensures that it is safe to re-run the DAG multiple times without causing any duplication or data integrity issues.
+2.	Creating a BigLake Table Programmatically:
+Currently, the programmatic creation of BigLake tables, especially when dealing with Hive partitioned data, is supported primarily through the gcloud and bq command-line tools. Other methods, such as using SQL commands, require further exploration and testing. Additional time may be needed to fully implement and validate those approaches.
+3.	Airflow Docker Compose Setup:
+The Airflow environment is configured using a basic Docker Compose setup, which includes the essential components such as the web server and scheduler. This setup does not include additional workers, as the current requirements do not necessitate a more complex configuration. The setup is designed to be simple and efficient for the project’s needs.
+4.	Service Account Key Management:
+For security reasons, the service account key has not been uploaded to the repository. It’s recommended to securely manage and provide this key separately, ensuring that sensitive credentials are protected in accordance with best practices.
 
 ## Reference
 
