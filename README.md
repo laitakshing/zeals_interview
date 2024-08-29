@@ -1,5 +1,5 @@
 
-# BigLake Table with Airflow on GCP
+# (Zeals Task) BigLake Table with Airflow on GCP
 
 ## Overview
 
@@ -41,6 +41,9 @@ your_project/
 │   └── bikeshare_etl.py            # The Airflow DAG for the ETL process
 ├── scripts/
 │   └── service_account.json        # Google Cloud service account credentials
+│   └── analysis.sql                # The SQL Query for Task 5 Data Analysis
+│   └── create_biglake_table.sh     # GCloud command to Create Biglake table
+├── logs/                           # Logs folder 
 ├── Dockerfile                      # Dockerfile for building the Airflow environment
 ├── docker-compose.yml              # Docker Compose configuration for Airflow services
 ├── requirements.txt                # Python dependencies for Airflow
@@ -49,10 +52,13 @@ your_project/
 
 ### Project Files
 
-- **dags/bikeshare_etl.py**: The DAG script defining the ETL process, including tasks for extracting data from BigQuery and uploading it to Google Cloud Storage.
+- **dags/bikeshare_etl.py**: The DAG script defining the ETL process, including tasks for extracting data from BigQuery public dataset bikeshare and uploading it to Google Cloud Storage as Hive partitioned data format
 - **scripts/service_account.json**: The Google Cloud service account JSON key used for authentication.
+- **scripts/analysis.sql**: Include 9 Bigquery queries for Task 5 Data Analysis
+- **scripts/create_biglake_table.sh**: The GCloud command to create bigLake Table on Hive partitioned data
+- **logs**: Logs folder to be mounted by airflow  
 - **Dockerfile**: The Dockerfile for creating the Airflow environment with the required dependencies.
-- **docker-compose.yml**: The Docker Compose file to set up Airflow services like the webserver and scheduler.
+- **docker-compose.yml**: The Docker Compose file to set up Airflow services like the webserver and scheduler and PostgreSQL.
 - **requirements.txt**: Lists the Python dependencies needed for Airflow.
 
 ## Environment Setup
@@ -67,10 +73,10 @@ Ensure Docker and Docker Compose are installed and running on your local machine
 
 ### 3. Build the Docker Image
 
-Build the Docker image for the Airflow environment:
+Follow and construct the project folder structure(please add logs folder) and build the Docker image for the Airflow environment:
 
 ```bash
-docker-compose build
+docker compose -p zeal-airflow build 
 ```
 
 ### 4. Start Airflow Services
@@ -95,8 +101,8 @@ http://localhost:8080
 
 Login using the default credentials (if configured in the `docker-compose.yml`):
 
-- Username: `admin`
-- Password: `admin_password`
+- Username: `airflow`
+- Password: `airflow`
 
 ### 2. Set Up Airflow Connections
 
