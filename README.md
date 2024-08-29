@@ -221,8 +221,10 @@ Currently, the programmatic creation of BigLake tables, especially when dealing 
 The Airflow environment is configured using a basic Docker Compose setup, which includes the essential components such as the web server and scheduler. This setup does not include additional workers, as the current requirements do not necessitate a more complex configuration. The setup is designed to be simple and efficient for the project’s needs.
 4.	Service Account Key Management:
 For security reasons, the service account key has not been uploaded to the repository. It’s recommended to securely manage and provide this key separately, ensuring that sensitive credentials are protected in accordance with best practices.
-5. Update or Recreate the Biglake Table daily
+5.  Update or Recreate the Biglake Table daily:
 There is no need to update or recreate the Biglake table unless there is a schema change. The normal partition data addition and subtraction in GCS will affect the Biglake table immediately.
+6.  Error Handling, Logging and Monitoring:
+For simplicity, I just used try except block for error handling, email_on_failure for monitoring and just simply adopt python logging library.
 
 ## Reference
 
