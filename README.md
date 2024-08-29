@@ -13,7 +13,7 @@ This project demonstrates how to build a BigLake table in Google Cloud Platform 
 - [Running the Project](#running-the-project)
 - [Triggering the Airflow DAG](#triggering-the-airflow-dag)
 - [Troubleshooting](#troubleshooting)
-- [License](#license)
+- [Reference](#reference)
 
 ## Prerequisites
 
@@ -158,13 +158,33 @@ If you setup correctly, you can see the dag:
 
 To manually trigger the DAG:
 
+#### Trigger DAG (It will get the yesterday data and store it in GCS)
 - Go to the **DAGs** page in the Airflow UI.
 - Click on the toggle switch to enable the DAG.
 - Click on the **Trigger DAG** button to start the ETL process.
 
+#### Trigger DAG w/config (We can manually add a JSON to backfill data)
+- Go to the **DAGs** page in the Airflow UI.
+- Click on the toggle switch to enable the DAG.
+- Click on the **Trigger DAG w/config** button to start the ETL process.
+- Fill in the Configuration JSON like this
+![image](https://github.com/user-attachments/assets/9456dd30-1b39-4ec2-85a1-5563359d1447)
+- Click on the **Trigger**
+
+
 ### 2. Automatic Scheduling
 
 You can also set up the DAG to run on a schedule by modifying the `schedule_interval` in the DAG file (`bikeshare_etl.py`).
+
+### 3. Check the data in GCS
+
+When the DAG run is completed, you can check the GCS folder to see if the data is uploaded
+![image](https://github.com/user-attachments/assets/b66f059e-b22b-4b57-83b7-753c7364cdcd)
+
+### 4. Run the Query in scripts/analysis.sql in Bigquery Console
+![image](https://github.com/user-attachments/assets/4df21d50-867a-4d5e-9a41-86dd1cbd8294)
+
+
 
 ## Troubleshooting
 
@@ -182,6 +202,15 @@ docker-compose logs airflow-scheduler
 - **Service Account Key Not Found**: Ensure the `service_account.json` file is correctly placed in the `scripts/` directory.
 - **Airflow UI Not Accessible**: Check if the Docker services are running with `docker ps`. Restart the services if needed.
 
-## License
+### 3. Remarks
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. We are using ‘wb’ mode so it will truncates and recreate file if it already exists and creates a new file if it does not exist. Thus, It is safe to re-run the dag
+2. For creating a biglake table programmatically, it only work when using gcloud bq command, escpecially on Hive partition data. I need more time for other method like SQL
+3. For Airflow Docker compose, I just adopt the basic setup(i.e. no additional workers) since no special requirement.
+4. I did not upload my service-account key for security issue
+
+## Reference
+
+1. **BiglakeTable**: [Create Biglake Table](https://docs.docker.com/get-docker/](https://cloud.google.com/bigquery/docs/create-cloud-storage-table-biglake#create-biglake-partitioned-data))
+2. **Airflow in Docker compose**:[Airflow](https://airflow.apache.org/docs/apache-airflow/2.0.2/start/docker.html)
+3. **ChatGPT**
