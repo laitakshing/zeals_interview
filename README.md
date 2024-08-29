@@ -179,7 +179,8 @@ You can also set up the DAG to run on a schedule by modifying the `schedule_inte
 ### 3. Check the data in GCS
 
 When the DAG run is completed, you can check the GCS folder to see if the data is uploaded
-![image](https://github.com/user-attachments/assets/b66f059e-b22b-4b57-83b7-753c7364cdcd)
+![image](https://github.com/user-attachments/assets/b66f059e-b22b-4b57-83b7-753c7364cdcd) ![image](https://github.com/user-attachments/assets/704bf02f-ea14-4b13-b68a-4f0e15aefcd8)
+
 
 ### 4. Run the Query in scripts/analysis.sql in Bigquery Console
 ![image](https://github.com/user-attachments/assets/4df21d50-867a-4d5e-9a41-86dd1cbd8294)
