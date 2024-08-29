@@ -172,7 +172,12 @@ To manually trigger the DAG:
 - Click on the **Trigger DAG w/config** button to start the ETL process.
 - Fill in the Configuration JSON like this
 ![image](https://github.com/user-attachments/assets/9456dd30-1b39-4ec2-85a1-5563359d1447)
-- Click on the **Trigger**
+- Click on the **Trigger** and wait for the result
+![image](https://github.com/user-attachments/assets/15162798-9414-470b-9b75-83f0e194196e)
+![image](https://github.com/user-attachments/assets/ec90b707-4d96-4876-aff3-91ffc7fc295d)
+
+
+  
 
 
 ### 2. Automatic Scheduling
