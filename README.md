@@ -5,6 +5,9 @@
 
 This project demonstrates how to build a BigLake table in Google Cloud Platform (GCP) and use Apache Airflow to manage ETL processes. The project includes a Docker Compose setup to host an Airflow environment and automate the workflow.
 
+![image](https://github.com/user-attachments/assets/a895b61e-26e9-43f4-a8df-bb709fef87ae)
+
+
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
